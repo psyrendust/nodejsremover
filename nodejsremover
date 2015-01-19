@@ -137,7 +137,7 @@ if [[ $installed_with_nvm == 1 ]]; then
   logemphasis "- rm -rf \"$HOME/.nvm\""
   if logquestion "Would you like to execute the above commands"; then
     uninstalled+=("nvm")
-    if [[ -n $(which nvm | grep "/nvm$") ]]; then
+    if [[ -n $(type nvm | grep "nvm is a shell function") ]] || [[ -n $(which nvm | grep "/nvm$") ]]; then
       nvm deactivate && logok "nvm deactivate"
     fi
     rm -rf "$HOME/.nvm" && logok "Removed: $HOME/.nvm"
@@ -245,19 +245,20 @@ if [[ ${#uninstalled[@]} > 0 ]]; then
     done
   fi
 
-  logspecial "The following npm packages were found:"
-  for global_npm_module in ${global_npm_modules[@]}; do
-    logemphasis "- $global_npm_module"
-  done
-  for global_linked_npm_module in ${global_linked_npm_modules[@]}; do
-    logemphasis "- $(echo $global_linked_npm_module | sed 's/|/ -> /')"
-  done
-
-  str="${global_npm_modules[@]}"
-  logspecial "You can reinstall them with the following:"
-  log "npm install -g $str"
-  log ""
-  for global_linked_npm_module in ${global_linked_npm_modules[@]}; do
-    log "pushd $(echo $global_linked_npm_module | cut -d'|' -f2) && npm link && popd"
-  done
+  if [[ ${#global_npm_modules[@]} -gt 0 ]] || [[ ${#global_linked_npm_modules[@]} -gt 0 ]]; then
+    logspecial "The following npm packages were found:"
+    for global_npm_module in ${global_npm_modules[@]}; do
+      logemphasis "- $global_npm_module"
+    done
+    for global_linked_npm_module in ${global_linked_npm_modules[@]}; do
+      logemphasis "- $(echo $global_linked_npm_module | sed 's/|/ -> /')"
+    done
+    str="${global_npm_modules[@]}"
+    logspecial "You can reinstall them with the following:"
+    log "npm install -g $str"
+    [[ ${#global_linked_npm_modules[@]} -gt 0 ]] && log ""
+    for global_linked_npm_module in ${global_linked_npm_modules[@]}; do
+      log "pushd $(echo $global_linked_npm_module | cut -d'|' -f2) && npm link && popd"
+    done
+  fi
 fi
