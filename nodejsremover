@@ -104,20 +104,6 @@ global_npm_modules=($(npm -g list --depth=0 2>/dev/null | grep '├─\|└─' 
 # Check for globally linked npm modules
 global_linked_npm_modules=($(npm -g list --depth=0 2>/dev/null | grep '├─\|└─' | grep -v '│ └─' | grep -v '│ ├─' | grep ' -> ' | sed 's/├── //g' | sed 's/└── //g' | sed 's/├─┬ //g' | sed 's/ -> /|/g'))
 
-loginfo "Find all Node and NPM files"
-[[ -d "/usr/local/bin" ]] && node_files+=( $(find /usr/local/bin -name "node" -o -name "npm" -maxdepth 1) )
-[[ -d "/usr/local/lib" ]] && node_files+=( $(find /usr/local/lib -name "node" -o -name "npm" -maxdepth 1) )
-[[ -d "/opt/local/bin" ]] && node_files+=( $(find /opt/local/bin -name "node" -o -name "npm" -maxdepth 1) )
-[[ -d "/opt/local/lib" ]] && node_files+=( $(find /opt/local/lib -name "node" -o -name "npm" -maxdepth 1) )
-[[ -d "/usr/local/share/man" ]] && node_files+=( $(find /usr/local/share/man -name "node*" -o -name "npm*") )
-[[ -d "/usr/local/lib/dtrace" ]] && node_files+=( $(find /usr/local/lib/dtrace -name "node*") )
-
-loginfo "Find all Node and NPM folders"
-[[ -d "/usr/local" ]] && node_folders+=( $(find /usr/local -name "node_modules" -maxdepth 2) )
-[[ -d "/opt/local" ]] && node_folders+=( $(find /opt/local -name "node_modules" -maxdepth 2) )
-[[ -d "$HOME/.npm" ]] && node_folders+=( $(find $HOME -name ".npm" -maxdepth 1) )
-[[ -d "$HOME/.node-gyp" ]] && node_folders+=( $(find $HOME -name ".node-gyp" -maxdepth 1) )
-
 
 
 # ------------------------------------------------------------------------------
@@ -161,6 +147,23 @@ if [[ $installed_with_nvm == 1 ]]; then
 else
   loginfo "Node not installed via NVM"
 fi
+
+
+
+# ------------------------------------------------------------------------------
+loginfo "Find all Node and NPM files"
+[[ -d "/usr/local/bin" ]] && node_files+=( $(find /usr/local/bin -name "node" -o -name "npm" -maxdepth 1) )
+[[ -d "/usr/local/lib" ]] && node_files+=( $(find /usr/local/lib -name "node" -o -name "npm" -maxdepth 1) )
+[[ -d "/opt/local/bin" ]] && node_files+=( $(find /opt/local/bin -name "node" -o -name "npm" -maxdepth 1) )
+[[ -d "/opt/local/lib" ]] && node_files+=( $(find /opt/local/lib -name "node" -o -name "npm" -maxdepth 1) )
+[[ -d "/usr/local/share/man" ]] && node_files+=( $(find /usr/local/share/man -name "node*" -o -name "npm*") )
+[[ -d "/usr/local/lib/dtrace" ]] && node_files+=( $(find /usr/local/lib/dtrace -name "node*") )
+
+loginfo "Find all Node and NPM folders"
+[[ -d "/usr/local" ]] && node_folders+=( $(find /usr/local -name "node_modules" -maxdepth 2) )
+[[ -d "/opt/local" ]] && node_folders+=( $(find /opt/local -name "node_modules" -maxdepth 2) )
+[[ -d "$HOME/.npm" ]] && node_folders+=( $(find $HOME -name ".npm" -maxdepth 1) )
+[[ -d "$HOME/.node-gyp" ]] && node_folders+=( $(find $HOME -name ".node-gyp" -maxdepth 1) )
 
 
 
