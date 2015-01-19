@@ -11,7 +11,7 @@ confirmation.
 **1. Using cURL**
 
 ```shell
-curl -sSL https://raw.githubusercontent.com/psyrendust/nodejsremover/master/nodejsremover -o nodejsremover && bash nodejsremover.sh && rm nodejsremover.sh
+curl -sSL https://raw.githubusercontent.com/psyrendust/nodejsremover/master/nodejsremover -o nodejsremover.sh && bash nodejsremover.sh && rm nodejsremover.sh
 ```
 
 **2. Using Wget**
