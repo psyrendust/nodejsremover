@@ -1,0 +1,260 @@
+#!/usr/bin/env bash
+#
+# remove-node.sh
+#
+# Find and remove all traces of Node and NPM from OS X and Linux.
+# Log all file deletions to /var/log/nodejsremover-YYYYMMDD.log
+#
+# Author:
+#   Larry Gordon
+#
+# License:
+#   The MIT License (MIT) <http://psyrendust.mit-license.org/2014/license.html>
+# ------------------------------------------------------------------------------
+
+
+
+# Create variables to use in script
+# ------------------------------------------------------------------------------
+# Create log filename
+logfile="$HOME/nodejsremover-$(date +%Y%m%d.%H%M).log"
+installed_with_1click=0
+installed_with_homebrew=0
+installed_with_nvm=0
+node_files=()
+node_folders=()
+global_npm_modules=()
+global_linked_npm_modules=()
+uninstalled=()
+
+
+
+# Helper functions
+# ------------------------------------------------------------------------------
+function log() {
+  echo "$@" >> $logfile
+  echo "$@"
+}
+
+function logemphasis() {
+  echo "$@" >> $logfile
+  printf '\033[0;36m%s\033[0m\n' "$@"
+}
+
+function loginfo() {
+  echo "- info: $@" >> $logfile
+  printf '\033[1;37m%s\033[0m \033[0;34m%s\033[0m %s\n' "RMNODE" "INFO" "$@"
+}
+
+function logok() {
+  echo "- ok: $@" >> $logfile
+  printf '\033[1;37m%s\033[0m \033[0;32m%s\033[0m %s\n' "RMNODE" "OK" "$@"
+}
+
+function logcomplete() {
+  echo "- complete: $@" >> $logfile
+  printf '\033[1;37m%s\033[0m \033[0;32m%s\033[0m \033[0;32m%s\033[0m\n' "RMNODE" "COMPLETE" "$@"
+}
+
+function logwarn() {
+  echo "- warn: $@" >> $logfile
+  printf '\033[1;37m%s\033[0m \033[0;33m%s\033[0m \033[1;33m%s\033[0m\n' "RMNODE" "WARNING" "$@"
+}
+
+function logspecial() {
+  echo "" >> $logfile
+  echo "- info: $@" >> $logfile
+  printf '\033[1;37m%s\033[0m \033[0;36m%s\033[0m \033[1;36m%s\033[0m\n' "RMNODE" "INFO" "$@"
+}
+
+function logquestion() {
+  printf '\033[1;37m%s\033[0m \033[0;36m%s\033[0m \033[1;36m%s\033[0m \033[0;33m%s\033[0m' "RMNODE" "INFO" "${1:-Are you sure}" "[Y/n]"
+  read -r -p "? " REPLY
+  case $REPLY in
+    [yY][eE][sS]|[yY])
+      true
+      ;;
+    *)
+      false
+      ;;
+  esac
+}
+
+
+
+# Check for installation type
+# ------------------------------------------------------------------------------
+# Homebrew
+if [[ -n $(which brew | grep "/brew$") ]] && [[ -n "$(brew list 2>/dev/null | grep "^node$")" ]]; then
+  installed_with_homebrew=1
+fi
+# 1-Click Installer
+if [[ -a /var/db/receipts/org.nodejs.pkg.bom ]]; then
+  installed_with_1click=1
+fi
+# nvm
+if [[ -a "$HOME/.nvm" ]]; then
+  installed_with_nvm=1
+fi
+
+
+# ------------------------------------------------------------------------------
+# Check for globally installed npm modules
+global_npm_modules=($(npm -g list --depth=0 2>/dev/null | grep '├─\|└─' | grep -v ' -> ' | grep -v '│ └──' | grep -v '│ ├──' | grep -v 'npm@' | cut -d' ' -f2))
+# Check for globally linked npm modules
+global_linked_npm_modules=($(npm -g list --depth=0 2>/dev/null | grep '├─\|└─' | grep -v '│ └─' | grep -v '│ ├─' | grep ' -> ' | sed 's/├── //g' | sed 's/└── //g' | sed 's/├─┬ //g' | sed 's/ -> /|/g'))
+
+loginfo "Find all Node and NPM files"
+[[ -d "/usr/local/bin" ]] && node_files+=( $(find /usr/local/bin -name "node" -o -name "npm" -maxdepth 1) )
+[[ -d "/usr/local/lib" ]] && node_files+=( $(find /usr/local/lib -name "node" -o -name "npm" -maxdepth 1) )
+[[ -d "/opt/local/bin" ]] && node_files+=( $(find /opt/local/bin -name "node" -o -name "npm" -maxdepth 1) )
+[[ -d "/opt/local/lib" ]] && node_files+=( $(find /opt/local/lib -name "node" -o -name "npm" -maxdepth 1) )
+[[ -d "/usr/local/share/man" ]] && node_files+=( $(find /usr/local/share/man -name "node*" -o -name "npm*") )
+[[ -d "/usr/local/lib/dtrace" ]] && node_files+=( $(find /usr/local/lib/dtrace -name "node*") )
+
+loginfo "Find all Node and NPM folders"
+[[ -d "/usr/local" ]] && node_folders+=( $(find /usr/local -name "node_modules" -maxdepth 2) )
+[[ -d "/opt/local" ]] && node_folders+=( $(find /opt/local -name "node_modules" -maxdepth 2) )
+[[ -d "$HOME/.npm" ]] && node_folders+=( $(find $HOME -name ".npm" -maxdepth 1) )
+[[ -d "$HOME/.node-gyp" ]] && node_folders+=( $(find $HOME -name ".node-gyp" -maxdepth 1) )
+
+
+
+# ------------------------------------------------------------------------------
+loginfo "Check if Node was installed via Homebrew"
+if [[ $installed_with_homebrew == 1 ]]; then
+  loginfo "Node.js installed via Homebrew"
+  logspecial "Commands to execute:"
+  logemphasis "- brew uninstall node"
+  logemphasis "- brew prune"
+  logemphasis "- brew cleanup"
+  if logquestion "Would you like to execute the above commands"; then
+    uninstalled+=("homebrew")
+    brew uninstall node && logok "brew uninstall node"
+    brew prune && logok "brew prune"
+    brew cleanup && logok "brew cleanup"
+  else
+    loginfo "Skip uninstalling Node.js via Homebrew"
+  fi
+else
+  loginfo "Node not installed via Homebrew"
+fi
+
+
+
+# ------------------------------------------------------------------------------
+loginfo "Check if Node was installed via NVM"
+if [[ $installed_with_nvm == 1 ]]; then
+  loginfo "Node installed via NVM"
+  logspecial "Commands to execute:"
+  logemphasis "- nvm deactivate"
+  logemphasis "- rm -rf \"$HOME/.nvm\""
+  if logquestion "Would you like to execute the above commands"; then
+    uninstalled+=("nvm")
+    if [[ -n $(which nvm | grep "/nvm$") ]]; then
+      nvm deactivate && logok "nvm deactivate"
+    fi
+    rm -rf "$HOME/.nvm" && logok "Removed: $HOME/.nvm"
+  else
+    loginfo "Skip uninstalling Node.js via NVM"
+  fi
+else
+  loginfo "Node not installed via NVM"
+fi
+
+
+
+# ------------------------------------------------------------------------------
+loginfo "Check if Node was installed via 1-click installer"
+if [[ $installed_with_1click == 1 ]]; then
+  loginfo "Node installed via 1-click installer"
+  loginfo "Find all Node and NPM files via /var/db/receipts/org.nodejs.pkg.bom"
+  node_files+=( $(lsbom -f -l -s -pf /var/db/receipts/org.nodejs.pkg.bom | while read f; do echo "/usr/local/${f}"; done) )
+  if [[ -d /var/db/receipts ]]; then
+    loginfo "Find all Node and NPM receipts"
+    node_files+=( $(find /var/db/receipts -name "org.nodejs.*") )
+  fi
+else
+  loginfo "Node not installed via 1-click installer"
+fi
+
+
+
+# ------------------------------------------------------------------------------
+if [[ ${#node_files[@]} > 0 ]]; then
+  if logquestion "Found ${#node_files[@]} files for removal. Would you like to list them"; then
+    for node_file in ${node_files[@]}; do
+      [[ -a "$node_file" ]] && logemphasis "- $node_file"
+    done
+  fi
+  if logquestion "Would you like to remove ${#node_files[@]} files"; then
+    uninstalled+=("files")
+    loginfo "Removing all Node and NPM files"
+    for node_file in ${node_files[@]}; do
+      [[ -a "$node_file" ]] && sudo rm -rf "$node_file" && logok "Removed: $node_file"
+    done
+  else
+    loginfo "Skip removing ${#node_files[@]} files"
+  fi
+else
+  loginfo "No files found"
+fi
+
+if [[ ${#node_folders[@]} > 0 ]]; then
+  if logquestion "Found ${#node_folders[@]} folders for removal. Would you like to list them"; then
+    for node_folder in ${node_folders[@]}; do
+      [[ -a "$node_folder" ]] && logemphasis "- $node_folder"
+    done
+  fi
+  if logquestion "Would you like to remove ${#node_folders[@]} folders"; then
+    uninstalled+=("folders")
+    loginfo "Removing all Node and NPM folders"
+    for node_folder in ${node_folders[@]}; do
+      [[ -a "$node_folder" ]] && sudo rm -rf "$node_folder" && logok "Removed: $node_folder"
+    done
+  else
+    loginfo "Skip removing ${#node_folders[@]} folders"
+  fi
+else
+  loginfo "No folders found"
+fi
+
+
+
+# ------------------------------------------------------------------------------
+Log message if something was uninstalled
+if [[ ${#uninstalled[@]} > 0 ]]; then
+  logcomplete "Node.js and NPM have been removed from your system."
+  reffound=()
+  dotfiles=($HOME/.{bash_profile,bashrc,profile,zlogin,zshenv,zshrc})
+  for dotfile in ${dotfiles[@]}; do
+    if [[ -a "$dotfile" ]]; then
+      if [[ -n $(grep 'node\|npm\|nvm' "$dotfile") ]]; then
+        reffound+=("$dotfile")
+      fi
+    fi
+  done
+
+  if [[ ${#reffound[@]} -gt 0 ]]; then
+    logwarn "You should remove the references to Node, NPM, or NVM that were found in the following files:"
+    for ref in ${reffound[@]}; do
+      logemphasis "- $ref"
+    done
+  fi
+
+  logspecial "The following npm packages were found:"
+  for global_npm_module in ${global_npm_modules[@]}; do
+    logemphasis "- $global_npm_module"
+  done
+  for global_linked_npm_module in ${global_linked_npm_modules[@]}; do
+    logemphasis "- $(echo $global_linked_npm_module | sed 's/|/ -> /')"
+  done
+
+  str="${global_npm_modules[@]}"
+  logspecial "You can reinstall them with the following:"
+  log "npm install -g $str"
+  log ""
+  for global_linked_npm_module in ${global_linked_npm_modules[@]}; do
+    log "pushd $(echo $global_linked_npm_module | cut -d'|' -f2) && npm link && popd"
+  done
+fi
