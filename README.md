@@ -11,13 +11,13 @@ confirmation.
 **1. Using cURL**
 
 ```shell
-curl -sSL https://raw.githubusercontent.com/psyrendust/nodejsremover/master/nodejsremover | bash
+curl -sSL https://raw.githubusercontent.com/psyrendust/nodejsremover/master/nodejsremover -o nodejsremover && bash nodejsremover.sh && rm nodejsremover.sh
 ```
 
 **2. Using Wget**
 
 ```shell
-wget -qO- https://raw.githubusercontent.com/psyrendust/nodejsremover/master/nodejsremover | bash
+wget -qO- -O nodejsremover.sh https://raw.githubusercontent.com/psyrendust/nodejsremover/master/nodejsremover && bash nodejsremover.sh && rm nodejsremover.sh
 ```
 
 ## Node.js Installation Types
