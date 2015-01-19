@@ -12,7 +12,7 @@
 #   The MIT License (MIT) <http://psyrendust.mit-license.org/2014/license.html>
 # ------------------------------------------------------------------------------
 
-
+set -e
 
 # Create variables to use in script
 # ------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ function logspecial() {
 }
 
 function logquestion() {
-  printf '\033[1;37m%s\033[0m \033[0;36m%s\033[0m \033[1;36m%s\033[0m \033[0;33m%s\033[0m?' "RMNODE" "INFO" "${1:-Are you sure}" "[Y/n]"
+  printf '\033[1;37m%s\033[0m \033[0;36m%s\033[0m \033[1;36m%s\033[0m \033[0;33m%s\033[0m? ' "RMNODE" "INFO" "${1:-Are you sure}" "[Y/n]"
   read REPLY
   case $REPLY in
     [yY][eE][sS]|[yY])
@@ -222,7 +222,7 @@ fi
 
 
 # ------------------------------------------------------------------------------
-Log message if something was uninstalled
+# Log message if something was uninstalled
 if [[ ${#uninstalled[@]} > 0 ]]; then
   logcomplete "Node.js and NPM have been removed from your system."
   reffound=()
