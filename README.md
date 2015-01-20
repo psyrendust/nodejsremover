@@ -4,6 +4,8 @@ Safely remove Node.js and NPM from OS X and Linux regardless of the installation
 Logs all files and folders for removal to stdout and prompts the user for removal
 confirmation.
 
+You can view a video of what this does on [asciinema](https://asciinema.org/a/15574).
+
 ## Usage
 
 > For your own safety always check shell files before you run them from the internet [https://raw.githubusercontent.com/psyrendust/nodejsremover/master/nodejsremover](https://raw.githubusercontent.com/psyrendust/nodejsremover/master/nodejsremover).
