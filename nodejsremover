@@ -133,13 +133,9 @@ loginfo "Check if Node was installed via NVM"
 if [[ $installed_with_nvm == 1 ]]; then
   loginfo "Node installed via NVM"
   logspecial "Commands to execute:"
-  logemphasis "- nvm deactivate"
   logemphasis "- rm -rf \"$HOME/.nvm\""
   if logquestion "Would you like to execute the above commands"; then
     uninstalled+=("nvm")
-    if [[ -n $(type nvm | grep "nvm is a shell function") ]] || [[ -n $(which nvm | grep "/nvm$") ]]; then
-      nvm deactivate && logok "nvm deactivate"
-    fi
     rm -rf "$HOME/.nvm" && logok "Removed: $HOME/.nvm"
   else
     loginfo "Skip uninstalling Node.js via NVM"
